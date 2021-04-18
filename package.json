@@ -1,0 +1,49 @@
+{
+  "name": "react-plugs",
+  "version": "0.0.1",
+  "description": "Framework for pluggable components",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "npx eslint ./src --ext .js,.jsx,.ts,.tsx && webpack --config webpack.config.prod.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beothorn/reactPlugs.git"
+  },
+  "author": "beothorn",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/beothorn/reactPlugs/issues"
+  },
+  "homepage": "https://github.com/beothorn/reactPlugs#readme",
+  "dependencies": {
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.2",
+    "@types/rx": "^4.1.2",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "rxjs": "^6.6.6"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.11.9",
+    "@testing-library/react": "^11.2.5",
+    "@types/html-webpack-plugin": "^3.2.4",
+    "@types/jest": "^26.0.21",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "clean-webpack-plugin": "^3.0.0",
+    "eslint": "^7.24.0",
+    "html-webpack-plugin": "^5.3.1",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.4",
+    "ts-loader": "^8.0.18",
+    "typescript": "^4.2.4",
+    "webpack": "^5.27.1",
+    "webpack-cli": "^4.5.0",
+    "webpack-dev-middleware": "^4.1.0",
+    "webpack-dev-server": "^3.11.2",
+    "webpack-merge": "^5.7.3"
+  }
+}
