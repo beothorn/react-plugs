@@ -1,12 +1,14 @@
 {
   "name": "react-plugs",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Framework for pluggable react components and rxjs observables",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["/dist"],
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
+    "prepare": "npm run build",
     "build": "npx eslint ./src --ext .js,.jsx,.ts,.tsx && webpack --config webpack.config.prod.js"
   },
   "repository": {

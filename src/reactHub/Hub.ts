@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import { Observable, Observer, Subscriber, Subscription } from 'rxjs'
 import * as ReactDOM from 'react-dom'
 import * as React from 'react'
