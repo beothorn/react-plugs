@@ -1,7 +1,7 @@
 {
   "name": "react-plugs",
   "version": "0.0.1",
-  "description": "Framework for pluggable components",
+  "description": "Framework for pluggable react components and rxjs observables",
   "private": true,
   "scripts": {
     "test": "jest",
