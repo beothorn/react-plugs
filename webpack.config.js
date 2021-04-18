@@ -19,7 +19,7 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: 'index.js',
+    filename: './src/index.js',
     library: {
       name: 'reactPlugs',
       type: 'umd',
