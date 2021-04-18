@@ -2,7 +2,8 @@
   "name": "react-plugs",
   "version": "0.0.1",
   "description": "Framework for pluggable react components and rxjs observables",
-  "private": true,
+  "main": "dist/reactPlugs.js",
+  "types": "dist/reactPlugs.d.ts",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
