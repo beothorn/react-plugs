@@ -1,10 +1,10 @@
-import HubComponent from './HubComponent'
+import { HubComponent } from './HubComponent'
 import * as React from "react"
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 
 test('Render all components', () => {
-    const component: React.FunctionComponent<any> = ({val}) => <p>{val}</p>
+    const component: React.FunctionComponent<{val: string}> = ({val}) => <p>{val}</p>
 
     const components = new Map(Object.entries({ 
         "a": component,

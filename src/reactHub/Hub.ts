@@ -1,10 +1,9 @@
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 
-import { Observable, Observer, Subscriber, Subscription } from 'rxjs'
+import { Observable,  PartialObserver, Subscription } from 'rxjs'
 import * as ReactDOM from 'react-dom'
 import * as React from 'react'
 import { HubComponent } from './HubComponent'
-
 
 interface OutputConnection {
     outputObservable: Observable<any>,
@@ -12,7 +11,7 @@ interface OutputConnection {
 }
 
 interface InputConnection {
-    inputSubscriber: Observer<any>,
+    inputSubscriber: PartialObserver<any>,
     subscription: Subscription
 }
 
@@ -35,7 +34,7 @@ interface PlugConfig {
     renderer?: Renderable;
     inputs?: {
         source: string;
-        inputSubscriber: Subscriber<any>;
+        inputSubscriber: PartialObserver<any>;
     }[];
     outputs?: {
         name: string;
@@ -198,7 +197,7 @@ class Hub {
 
     unplug: (componentName: string) => void = (componentName) => {
         const currentConnection = this.connections.get(componentName)
-        currentConnection.outputs.forEach((out, outName) => out.subscriptions.forEach( s => {
+        currentConnection.outputs.forEach((out) => out.subscriptions.forEach( s => {
             s.inputs.get(componentName).forEach( s => s.subscription.unsubscribe())
         }))
         currentConnection.inputs.forEach(c => c.forEach( co => co.subscription.unsubscribe()  ))
