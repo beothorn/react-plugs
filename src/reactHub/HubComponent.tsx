@@ -11,4 +11,4 @@ const HubComponent:React.FunctionComponent<{
     return <React.StrictMode> {rendered} </React.StrictMode>
 }
 
-export default HubComponent
+export { HubComponent } 

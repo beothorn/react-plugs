@@ -1,4 +1,2 @@
-import { Hub } from "./reactHub/Hub"
-import HubComponent from "./reactHub/HubComponent"
-
-export { Hub, HubComponent }
+export { Hub } from "./reactHub/Hub"
+export { HubComponent } from "./reactHub/HubComponent"

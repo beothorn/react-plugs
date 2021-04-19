@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-      "outDir": "dist",
+      "outDir": "./dist",
       "sourceMap": true,
       "noImplicitAny": true,
       "module": "es6",
@@ -10,6 +10,9 @@
       "allowJs": true,
       "declaration": true
     },
+    "include": [
+      "src/**/*"
+    ],
     "exclude": [
       "**/*.test.tsx",
       "node_modules",
