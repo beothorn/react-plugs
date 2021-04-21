@@ -34,7 +34,7 @@ interface PlugConfig {
     renderer?: Renderable;
     inputs?: {
         source: string;
-        inputSubscriber: PartialObserver<any>;
+        inputSubscriber: any;
     }[];
     outputs?: {
         name: string;
