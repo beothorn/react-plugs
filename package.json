@@ -1,6 +1,6 @@
 {
   "name": "react-plugs",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Framework for pluggable react components and rxjs observables",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

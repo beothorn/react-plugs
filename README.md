@@ -10,3 +10,5 @@ or a connection the has only an input and renders something.
 
 A connection is plugged into the hub using the plug function. The subscription of observers is done depending on 
 the component name and its inputs and outputs.
+
+See the [demo](https://github.com/beothorn/react-plugs-demo)
