@@ -40,6 +40,7 @@ interface PlugConfig {
         name: string;
         outputObservable: Observable<any>;
     }[];
+    [key: string]: any;
 }
 
 type Renderer = (components: Map<string, React.FunctionComponent>, props: Map<string, any>) => void;
