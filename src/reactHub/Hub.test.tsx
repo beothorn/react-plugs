@@ -383,7 +383,7 @@ describe("Hub tests", () => {
 
     })
 
-    test.only('Unplugged connection should not render', done => {
+    test('Unplugged connection should not render', done => {
 
         const c: React.FunctionComponent<{ a: string }> = ({a}) => <p>{a}</p>
 
