@@ -216,4 +216,4 @@ class Hub {
     size: () => number = () => this.connections.size
 }
 
-export { Hub }
+export { Hub, PlugConfig }
