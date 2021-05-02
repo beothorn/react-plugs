@@ -1,5 +1,5 @@
 import { Hub } from "./Hub"
-import { BehaviorSubject, Subject, of } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs'
 import * as React from 'react'
 import '@testing-library/jest-dom'
 

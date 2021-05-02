@@ -1,13 +1,13 @@
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 
-import { Observable,  PartialObserver, Subscription } from 'rxjs'
+import { Observable, PartialObserver, Subscription } from 'rxjs';
 import * as ReactDOM from 'react-dom'
 import * as React from 'react'
 import { HubComponent } from './HubComponent'
 
 interface OutputConnection {
     outputObservable: Observable<any>,
-    subscriptions: Connection[]
+    subscribedConnections: Connection[]
 }
 
 interface InputConnection {
@@ -40,6 +40,7 @@ interface PlugConfig {
         name: string;
         outputObservable: Observable<any>;
     }[];
+    rank?: number; //TODO: allow ordering
     [key: string]: any;
 }
 
@@ -65,7 +66,7 @@ class Hub {
         this.aggregator = aggregator;
     }
 
-    description: () => Map<string, {
+    description: () => Map<string, { //TODO: This should be an input available as Hub:description
         inputs: any[],
         outputs: any[]
     }> = () => {
@@ -84,7 +85,7 @@ class Hub {
             connection.outputs.forEach((output, outputName) => {
                 const out: any[] = [outputName]
                 const outListeners: any[] = []
-                output.subscriptions.forEach(s => {
+                output.subscribedConnections.forEach(s => {
                     outListeners.push(s.name)
                 })
                 out.push(outListeners)
@@ -99,51 +100,51 @@ class Hub {
         return descriptionObj
     }
 
-    plug: (connection: PlugConfig) => void = (newConnection) => {
-        if(!this.connections.has(newConnection.name)){
-            this.connections.set(newConnection.name, {
-                name: newConnection.name,
+    getOrCreateConnection(name: string){
+        if(!this.connections.has(name)){
+            this.connections.set(name, {
+                name: name,
                 outputs: new Map(),
                 inputs: new Map()
             })    
         }
+        return this.connections.get(name)
+    }
 
-        const currentConnection: Connection = this.connections.get(newConnection.name)
+    plug: (connection: PlugConfig) => void = (newConnectionConfig) => {
+        const currentConnection: Connection = this.getOrCreateConnection(newConnectionConfig.name)
     
-        if(newConnection.inputs){
-            for(const input of newConnection.inputs){
+        if(newConnectionConfig.inputs){
+            for(const input of newConnectionConfig.inputs){
                 const [outputComponentName, outputName] = splitOutputName(input.source)
 
-                if(!this.connections.has(outputComponentName)){
-                    this.connections.set(outputComponentName, {
-                        name: outputComponentName,
-                        outputs: new Map(),
-                        inputs: new Map()
-                    })
-                }
+                const connectionOutputs: Map<string, OutputConnection> = this.getOrCreateConnection(outputComponentName).outputs
 
-                const connection: Connection = this.connections.get(outputComponentName)
-
-                if(!connection.outputs.has(outputName)){
-                    connection.outputs.set(outputName, {
+                // Create a placeholder on other connection output in case output is ot there yet
+                if(!connectionOutputs.has(outputName)){
+                    connectionOutputs.set(outputName, {
                         outputObservable: null,
-                        subscriptions:[]
+                        subscribedConnections:[]
                     })
                 }
-                const outputConnection: OutputConnection = connection.outputs.get(outputName)
+                const outputConnections: OutputConnection = connectionOutputs.get(outputName)
 
                 let subscription: Subscription = null
-                if(outputConnection.outputObservable){
-                    subscription = outputConnection.outputObservable.subscribe(input.inputSubscriber)
+                if(outputConnections.outputObservable){ // for placeholders there is no outputObservable
+                    subscription = outputConnections.outputObservable.subscribe(input.inputSubscriber)
                 }
-                outputConnection.subscriptions.push(currentConnection)
+                outputConnections.subscribedConnections.push(currentConnection)
+
                 if(!currentConnection.inputs.has(outputComponentName)){
                     currentConnection.inputs.set(outputComponentName, new Map())
                 }
+
+                // Unsubscribe input if already had one
                 const inputFor = currentConnection.inputs.get(outputComponentName)
                 if(inputFor.has(outputName)){
                     inputFor.get(outputName).subscription.unsubscribe()
                 }
+
                 inputFor.set(outputName, {
                     inputSubscriber: input.inputSubscriber,
                     subscription: subscription
@@ -151,18 +152,19 @@ class Hub {
             }
         }
 
-        if(newConnection.outputs){
-            //unsubscribe outputs
-            currentConnection.outputs.forEach((outputValue, outputKey) => {
-                outputValue.subscriptions.forEach( s => {
+        if(newConnectionConfig.outputs){
+            currentConnection.outputs.forEach((outputValue: OutputConnection, outputKey: string) => {
+                outputValue.subscribedConnections.forEach( (s: Connection) => {
+                    //unsubscribe outputs
                     const inputOnOtherConnectionForConnection = s.inputs.get(currentConnection.name)
-                    const inputOnOtherConnectionForOutput = inputOnOtherConnectionForConnection.get(outputKey)
+                    const inputOnOtherConnectionForOutput: InputConnection = inputOnOtherConnectionForConnection.get(outputKey)
                     if(inputOnOtherConnectionForOutput.subscription){
                         inputOnOtherConnectionForOutput.subscription.unsubscribe()
                     }
 
-                    //resubscribe output if available
-                    for(const newOutput of newConnection.outputs){
+                    // resubscribe output if available
+                    // those may be inputs that were subscribed on placeholders
+                    for(const newOutput of newConnectionConfig.outputs){
                         if(newOutput.name === outputKey){
                             outputValue.outputObservable = newOutput.outputObservable
                             inputOnOtherConnectionForOutput.subscription = outputValue.outputObservable.subscribe(inputOnOtherConnectionForOutput.inputSubscriber)
@@ -171,25 +173,25 @@ class Hub {
                 })
             })
 
-            for(const o of newConnection.outputs){
-                if(!currentConnection.outputs.has(o.name)){
-                    currentConnection.outputs.set(o.name, {
-                        outputObservable: o.outputObservable,
-                        subscriptions: []
+            for(const newOutput of newConnectionConfig.outputs){
+                if(!currentConnection.outputs.has(newOutput.name)){
+                    currentConnection.outputs.set(newOutput.name, {
+                        outputObservable: newOutput.outputObservable,
+                        subscribedConnections: [] // Outputs start with no observers
                     })
                 }
             }
         }
-        if(newConnection.renderer){
-            this.components.set(newConnection.name, newConnection.renderer.functionComponent)
-            if(newConnection.renderer.props){
-                const sub = newConnection.renderer.props.subscribe((state: any) => {
-                    this.currentState.set(newConnection.name, state)
+        if(newConnectionConfig.renderer){
+            this.components.set(newConnectionConfig.name, newConnectionConfig.renderer.functionComponent)
+            if(newConnectionConfig.renderer.props){
+                const sub = newConnectionConfig.renderer.props.subscribe((state: any) => {
+                    this.currentState.set(newConnectionConfig.name, state)
                     this.aggregator(this.components, this.currentState)
                 })
 
-                this.propsObservables.set(newConnection.name, {
-                    source: newConnection.renderer.props,
+                this.propsObservables.set(newConnectionConfig.name, {
+                    source: newConnectionConfig.renderer.props,
                     subscription: sub
                 })
             }
@@ -198,10 +200,10 @@ class Hub {
 
     unplug: (componentName: string) => void = (componentName) => {
         const currentConnection = this.connections.get(componentName)
-        currentConnection.outputs.forEach((out) => out.subscriptions.forEach( s => {
+        currentConnection.outputs.forEach((out) => out.subscribedConnections.forEach( s => {
             s.inputs.get(componentName).forEach( s => s.subscription.unsubscribe())
         }))
-        currentConnection.inputs.forEach(c => c.forEach( co => co.subscription.unsubscribe()  ))
+        currentConnection.inputs.forEach(c => c.forEach( co => co.subscription.unsubscribe() ))
         this.currentState.delete(componentName)
         this.components.delete(componentName)
         if(this.propsObservables.has(componentName)){
