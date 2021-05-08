@@ -1,6 +1,6 @@
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 
-import { Observable, PartialObserver, Subscription } from 'rxjs';
+import { Observable, PartialObserver, Subscription, Subject } from 'rxjs';
 import * as ReactDOM from 'react-dom'
 import * as React from 'react'
 import { HubComponent } from './HubComponent'
@@ -18,7 +18,8 @@ interface InputConnection {
 interface Connection {
     name: string,
     outputs: Map<string, OutputConnection>,
-    inputs: Map<string, Map<string, InputConnection>>
+    inputs: Map<string, Map<string, InputConnection>>,
+    placeholder: boolean
 }
 
 type Connections =  Map<string, Connection>;
@@ -29,7 +30,7 @@ interface Renderable{
     functionComponent: React.FunctionComponent<any>;
 }
 
-interface PlugConfig {
+interface Plug {
     name: string;
     renderer?: Renderable;
     inputs?: {
@@ -57,6 +58,10 @@ const splitOutputName: (outputName: string) => string[] = (outputName) => output
 
 class Hub {
     connections: Connections = new Map()
+    connectionsOutput:Subject<Map<string, {
+        inputs: any[],
+        outputs: any[]
+    }>> = new Subject()
     components: Map<string, React.FunctionComponent> = new Map()
     currentState: Map<string, any> = new Map()
     propsObservables: Map<string, { source: Observable<any>, subscription: Subscription }> = new Map()
@@ -64,9 +69,17 @@ class Hub {
 
     constructor(aggregator: Renderer = defaultRenderer) {
         this.aggregator = aggregator;
+
+        this.plug({
+            name: "Hub",
+            outputs: [{
+                name: "connections",
+                outputObservable: this.connectionsOutput
+            }]
+        })
     }
 
-    description: () => Map<string, { //TODO: This should be an input available as Hub:description
+    allConnections: () => Map<string, {
         inputs: any[],
         outputs: any[]
     }> = () => {
@@ -75,6 +88,7 @@ class Hub {
             outputs: any[]
         }> = new Map()
         this.connections.forEach((connection, connectionName) => {
+            if(connection.placeholder) return
             const inputs: any[] = []
             connection.inputs.forEach((inputConnectionSource, inputName) => {
                 inputConnectionSource.forEach((outputConnection, outputConnectionName) => {
@@ -100,25 +114,31 @@ class Hub {
         return descriptionObj
     }
 
-    getOrCreateConnection(name: string){
+    getOrCreateConnection(name: string, connectionBeingPlugged: boolean){
         if(!this.connections.has(name)){
             this.connections.set(name, {
                 name: name,
                 outputs: new Map(),
-                inputs: new Map()
+                inputs: new Map(),
+                placeholder: !connectionBeingPlugged
             })    
+            return this.connections.get(name)
         }
-        return this.connections.get(name)
+
+        const connection = this.connections.get(name)
+        if(connectionBeingPlugged)
+            connection.placeholder = false
+        return connection
     }
 
-    plug: (connection: PlugConfig) => void = (newConnectionConfig) => {
-        const currentConnection: Connection = this.getOrCreateConnection(newConnectionConfig.name)
+    plug: (connection: Plug) => void = (newConnectionConfig) => {
+        const currentConnection: Connection = this.getOrCreateConnection(newConnectionConfig.name, true)
     
         if(newConnectionConfig.inputs){
             for(const input of newConnectionConfig.inputs){
                 const [outputComponentName, outputName] = splitOutputName(input.source)
 
-                const connectionOutputs: Map<string, OutputConnection> = this.getOrCreateConnection(outputComponentName).outputs
+                const connectionOutputs: Map<string, OutputConnection> = this.getOrCreateConnection(outputComponentName, false).outputs
 
                 // Create a placeholder on other connection output in case output is ot there yet
                 if(!connectionOutputs.has(outputName)){
@@ -196,6 +216,7 @@ class Hub {
                 })
             }
         }
+        this.connectionsOutput.next(this.allConnections())
     }
 
     unplug: (componentName: string) => void = (componentName) => {
@@ -206,6 +227,7 @@ class Hub {
         currentConnection.inputs.forEach(c => c.forEach( co => co.subscription.unsubscribe() ))
         this.currentState.delete(componentName)
         this.components.delete(componentName)
+        this.connections.get(componentName).placeholder = true
         if(this.propsObservables.has(componentName)){
             const propsObservable = this.propsObservables.get(componentName)
             propsObservable.subscription.unsubscribe()
@@ -213,9 +235,11 @@ class Hub {
         }
         
         this.aggregator(this.components, this.currentState)
+        
+        this.connectionsOutput.next(this.allConnections())
     }
 
     size: () => number = () => this.connections.size
 }
 
-export { Hub, PlugConfig }
+export { Hub, Plug }

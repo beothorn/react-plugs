@@ -14,40 +14,46 @@ the component name and its inputs and outputs.
 This is an example of a widget that shows a random number
 
 ```
-import { Hub } from 'react-plugs'
+import { Hub, Plug } from 'react-plugs'
 import { Subject } from 'rxjs'
 import * as React from 'react'
 
-const hub = new Hub()
-
 const randomNumberSource: Subject<any> = new Subject()
 
-hub.plug({
-    name: "RandomNumberGenerator",
-    outputs: [
+setInterval( () => {
+    randomNumberSource.next({randomNumber: Math.random()})
+}, 2000)
+
+class RandomNumberGenerator implements Plug {
+    name = "RandomNumberGenerator"
+    outputs = [
         {
             name: "number",
             outputObservable: randomNumberSource
         }
     ]
-})
+}
 
-const randomNumberDisplayProps: Subject<any> = new Subject()
-hub.plug({
-    name: "RandomNumberDisplay",
-    inputs: [
+class RandomNumberDisplay implements Plug {
+    name = "RandomNumberDisplay"
+    inputs = [
         {
             source: "RandomNumberGenerator:number",
             inputSubscriber: (randomNumberGeneratorOutput) => {
                 randomNumberDisplayProps.next({randomNumber: randomNumberGeneratorOutput.randomNumber})
             }
         }
-    ],
-    renderer: {
+    ]
+    renderer = {
         props: randomNumberDisplayProps,
         functionComponent: ({randomNumber}) => <p>Random number: {randomNumber}</p>
     }
-})
+}
+
+const hub = new Hub()
+
+hub.plug(new RandomNumberGenerator())
+hub.plug(new RandomNumberDisplay())
 
 
 ```

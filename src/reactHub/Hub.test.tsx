@@ -82,6 +82,10 @@ describe("Hub tests", () => {
         })
 
         const expectation = new Map()
+        expectation.set("Hub", {
+            inputs: [],
+            outputs: [["connections", []]]
+        })
         expectation.set("A", {
             inputs: [
                 ["B","outB"],
@@ -111,13 +115,13 @@ describe("Hub tests", () => {
             ]
         })
 
-        expect(hub.description()).toStrictEqual(expectation)
+        expect(hub.allConnections()).toStrictEqual(expectation)
     })
 
     test("Add Producer then Consumer then Producer with same name, no duplicated messages", done => {
 
         const hub = new Hub( () => null )
-        expect(hub.size()).toBe(0)
+        expect(hub.size()).toBe(1)
 
         const producerOutput1: Subject<string> = new Subject()
         const producerOutput2: Subject<string> = new Subject()
@@ -129,7 +133,7 @@ describe("Hub tests", () => {
                 outputObservable: producerOutput1
             }]
         })
-        expect(hub.size()).toBe(1)
+        expect(hub.size()).toBe(2)
 
         hub.plug({
             name: "ConsumerB",
@@ -141,7 +145,7 @@ describe("Hub tests", () => {
                 }
             }]
         })
-        expect(hub.size()).toBe(2)
+        expect(hub.size()).toBe(3)
 
         hub.plug({
             name: "ProducerB",
@@ -150,7 +154,7 @@ describe("Hub tests", () => {
                 outputObservable: producerOutput2
             }]
         })
-        expect(hub.size()).toBe(2)
+        expect(hub.size()).toBe(3)
 
         producerOutput1.next("Bar")
         producerOutput2.next("Foo")
@@ -416,5 +420,60 @@ describe("Hub tests", () => {
             }
         })
         propsOutput.next({a: "Should get this prop"})
+    })
+
+    test('Plug a new connection should update Hub:connections', done => {
+        const hub = new Hub( () => null )
+
+        hub.plug({
+            name: "GetConnections",
+            inputs: [{
+                source: "Hub:connections",
+                inputSubscriber: (data: Map<string, {
+                    inputs: any[],
+                    outputs: any[]
+                }>) => {
+                    const components:string[] = Array.from(data.keys())
+                    if(components.length == 3) {
+                        expect(components[0]).toStrictEqual("Hub")
+                        expect(components[1]).toStrictEqual("GetConnections")
+                        expect(components[2]).toStrictEqual("SecondComponent")
+                        done()
+                    }
+                }
+            }]
+        })
+
+        hub.plug({
+            name: "SecondComponent"
+        })
+    })
+
+    test('Unplug a connection should update Hub:connections', done => {
+        const hub = new Hub( () => null )
+
+        hub.plug({
+            name: "SecondComponent"
+        })
+
+        hub.plug({
+            name: "GetConnections",
+            inputs: [{
+                source: "Hub:connections",
+                inputSubscriber: (data: Map<string, {
+                    inputs: any[],
+                    outputs: any[]
+                }>) => {
+                    const components:string[] = Array.from(data.keys())
+                    if(components.length == 2) {
+                        expect(components[0]).toStrictEqual("Hub")
+                        expect(components[1]).toStrictEqual("GetConnections")
+                        done()
+                    }
+                }
+            }]
+        })
+
+        hub.unplug("SecondComponent")
     })
 })
