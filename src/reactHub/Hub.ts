@@ -62,6 +62,7 @@ class Hub {
         inputs: any[],
         outputs: any[]
     }>> = new Subject()
+    debugOutput:Subject<string> = new Subject()
     components: Map<string, React.FunctionComponent> = new Map()
     currentState: Map<string, any> = new Map()
     propsObservables: Map<string, { source: Observable<any>, subscription: Subscription }> = new Map()
@@ -75,6 +76,9 @@ class Hub {
             outputs: [{
                 name: "connections",
                 outputObservable: this.connectionsOutput
+            },{
+                name: "debug",
+                outputObservable: this.debugOutput
             }]
         })
     }
@@ -116,6 +120,7 @@ class Hub {
 
     getOrCreateConnection(name: string, connectionBeingPlugged: boolean){
         if(!this.connections.has(name)){
+            if(!connectionBeingPlugged) this.debugOutput.next(`Creating placeholder: ${name}`)
             this.connections.set(name, {
                 name: name,
                 outputs: new Map(),
@@ -132,6 +137,7 @@ class Hub {
     }
 
     plug: (connection: Plug) => void = (newConnectionConfig) => {
+        this.debugOutput.next(`Plug: ${newConnectionConfig.name}`)
         const currentConnection: Connection = this.getOrCreateConnection(newConnectionConfig.name, true)
     
         if(newConnectionConfig.inputs){
@@ -142,6 +148,7 @@ class Hub {
 
                 // Create a placeholder on other connection output in case output is ot there yet
                 if(!connectionOutputs.has(outputName)){
+                    this.debugOutput.next(`Creating output placeholder: ${outputComponentName}:${outputName}`)
                     connectionOutputs.set(outputName, {
                         outputObservable: null,
                         subscribedConnections:[]
@@ -151,6 +158,7 @@ class Hub {
 
                 let subscription: Subscription = null
                 if(outputConnections.outputObservable){ // for placeholders there is no outputObservable
+                    this.debugOutput.next(`Input from ${newConnectionConfig.name} subscribed to output from ${outputComponentName}:${outputName}`)
                     subscription = outputConnections.outputObservable.subscribe(input.inputSubscriber)
                 }
                 outputConnections.subscribedConnections.push(currentConnection)
@@ -162,6 +170,7 @@ class Hub {
                 // Unsubscribe input if already had one
                 const inputFor = currentConnection.inputs.get(outputComponentName)
                 if(inputFor.has(outputName)){
+                    this.debugOutput.next(`Unsubscribed previous input from ${newConnectionConfig.name} from output of ${outputComponentName}:${outputName}`)
                     inputFor.get(outputName).subscription.unsubscribe()
                 }
 
@@ -179,6 +188,7 @@ class Hub {
                     const inputOnOtherConnectionForConnection = s.inputs.get(currentConnection.name)
                     const inputOnOtherConnectionForOutput: InputConnection = inputOnOtherConnectionForConnection.get(outputKey)
                     if(inputOnOtherConnectionForOutput.subscription){
+                        this.debugOutput.next(`Unsubscribed previous output from ${currentConnection.name}:${outputKey} for ${newConnectionConfig.name}`)
                         inputOnOtherConnectionForOutput.subscription.unsubscribe()
                     }
 
@@ -187,6 +197,7 @@ class Hub {
                     for(const newOutput of newConnectionConfig.outputs){
                         if(newOutput.name === outputKey){
                             outputValue.outputObservable = newOutput.outputObservable
+                            this.debugOutput.next(`Resubscribed previous output from ${currentConnection.name}:${outputKey} for ${newConnectionConfig.name}`)
                             inputOnOtherConnectionForOutput.subscription = outputValue.outputObservable.subscribe(inputOnOtherConnectionForOutput.inputSubscriber)
                         }
                     }
@@ -205,6 +216,7 @@ class Hub {
         if(newConnectionConfig.renderer){
             this.components.set(newConnectionConfig.name, newConnectionConfig.renderer.functionComponent)
             if(newConnectionConfig.renderer.props){
+                this.debugOutput.next(`Pluging props for ${newConnectionConfig.name}`)
                 const sub = newConnectionConfig.renderer.props.subscribe((state: any) => {
                     this.currentState.set(newConnectionConfig.name, state)
                     this.aggregator(this.components, this.currentState)
@@ -220,8 +232,10 @@ class Hub {
     }
 
     unplug: (componentName: string) => void = (componentName) => {
+        this.debugOutput.next(`Unplug: ${componentName}`)
         const currentConnection = this.connections.get(componentName)
         currentConnection.outputs.forEach((out) => out.subscribedConnections.forEach( s => {
+            this.debugOutput.next(`Unplug unsubscribed ${componentName}`)
             s.inputs.get(componentName).forEach( s => s.subscription.unsubscribe())
         }))
         currentConnection.inputs.forEach(c => c.forEach( co => co.subscription.unsubscribe() ))
@@ -230,6 +244,7 @@ class Hub {
         this.connections.get(componentName).placeholder = true
         if(this.propsObservables.has(componentName)){
             const propsObservable = this.propsObservables.get(componentName)
+            this.debugOutput.next(`Unplug props for ${componentName}`)
             propsObservable.subscription.unsubscribe()
             this.propsObservables.delete(componentName)
         }

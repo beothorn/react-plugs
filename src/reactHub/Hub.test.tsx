@@ -84,7 +84,10 @@ describe("Hub tests", () => {
         const expectation = new Map()
         expectation.set("Hub", {
             inputs: [],
-            outputs: [["connections", []]]
+            outputs: [
+                ["connections", []],
+                ["debug", []]
+            ]
         })
         expectation.set("A", {
             inputs: [
