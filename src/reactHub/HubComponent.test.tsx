@@ -19,7 +19,7 @@ test('Render all components', () => {
     render(<HubComponent 
         components={components} 
         props={props}
-        sorter={(a: string, b: string) => a.localeCompare(b)}
+        sorter={(a: [string, React.FunctionComponent<{}>], b: [string, React.FunctionComponent<{}>]) => a[0].localeCompare(b[0])}
     />)
     expect(screen.getByText("Foo")).toBeInTheDocument()
     expect(screen.getByText("Bar")).toBeInTheDocument()
