@@ -4,7 +4,8 @@ import * as React from "react"
 
 const HubComponent:React.FunctionComponent<{ 
         components: Map<string, React.FunctionComponent> ,
-        props: Map<string, any>
+        props: Map<string, any>,
+        sorter: (a:string, b:string) => number
     }> = ({ components, props }) => {    
     const rendered: React.ReactElement[] = []
     components.forEach( (Component, key) => 

@@ -19,6 +19,7 @@ test('Render all components', () => {
     render(<HubComponent 
         components={components} 
         props={props}
+        sorter={(a: string, b: string) => a.localeCompare(b)}
     />)
     expect(screen.getByText("Foo")).toBeInTheDocument()
     expect(screen.getByText("Bar")).toBeInTheDocument()

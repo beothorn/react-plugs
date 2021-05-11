@@ -41,7 +41,6 @@ interface Plug {
         name: string;
         outputObservable: Observable<any>;
     }[];
-    rank?: number; //TODO: allow ordering
     [key: string]: any;
 }
 
@@ -49,7 +48,7 @@ type Renderer = (components: Map<string, React.FunctionComponent>, props: Map<st
 
 const defaultRenderer: Renderer = (components, props) => 
     ReactDOM.render( 
-        HubComponent({ components, props }), 
+        HubComponent({ components, props, sorter: (a: string, b: string) => a.localeCompare(b) }), 
         document.getElementById('main')
     )
 
