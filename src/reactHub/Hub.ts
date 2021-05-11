@@ -48,7 +48,7 @@ type Renderer = (components: Map<string, React.FunctionComponent>, props: Map<st
 
 const defaultRenderer: Renderer = (components, props) => 
     ReactDOM.render( 
-        HubComponent({ components, props, sorter: (a: [string, React.FunctionComponent<{}>], b: [string, React.FunctionComponent<{}>]) => a[0].localeCompare(b[0]) }), 
+        HubComponent({ components, props, sorter: (a: [string, React.FunctionComponent], b: [string, React.FunctionComponent]) => a[0].localeCompare(b[0]) }), 
         document.getElementById('main')
     )
 
