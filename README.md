@@ -5,6 +5,10 @@ A library for pluggable components using react and rxjs.
 Example:
 
 ```javascript
+import { Hub, Plug } from 'react-plugs'
+import * as React from 'react'
+import { BehaviorSubject } from 'rxjs'
+
 const hotRandomNumber: BehaviorSubject<any> = new BehaviorSubject({randomNumber: Math.random()})
 setInterval( () => {
     hotRandomNumber.next({randomNumber: Math.random()})
