@@ -29,7 +29,7 @@
     "@types/rx": "^4.1.2",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "rxjs": "^6.6.6"
+    "rxjs": "^7.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.11.9",
